@@ -57,6 +57,53 @@ curl -L -s --header "Authorization: ${API_KEY}" \
 # Creating basic test data which has datasets with resources
 paster create-test-data -c ${CKAN_INI_FILE}
 
+# Datasets need to be assigned to an organisation
+
+echo "Assigning test Datasets to Organisation..."
+
+curl -L -s -q --header "Authorization: ${API_KEY}" \
+    --data "id=annakarenina&owner_org=${TEST_ORG_ID}" \
+    ${CKAN_ACTION_URL}/package_patch >> /dev/null
+
+curl -L -s -q --header "Authorization: ${API_KEY}" \
+    --data "id=warandpeace&owner_org=${TEST_ORG_ID}" \
+    ${CKAN_ACTION_URL}/package_patch >> /dev/null
+
+# Data Requests requires a specific organisation to exist in order to create DRs for Data.Qld
+DR_ORG_NAME=open-data-administration-data-requests
+DR_ORG_TITLE="Open Data Administration (data requests)"
+
+echo "Creating test users for ${DR_ORG_TITLE} Organisation:"
+
+paster --plugin=ckan user add dr_admin email=dr_admin@localhost password=password -c ${CKAN_INI_FILE}
+paster --plugin=ckan user add dr_editor email=dr_editor@localhost password=password -c ${CKAN_INI_FILE}
+
+echo "Creating Data Request Organisation:"
+
+DR_ORG=$( \
+    curl -L -s \
+    --header "Authorization: ${API_KEY}" \
+    --data "name=${DR_ORG_NAME}&title=${DR_ORG_TITLE}" \
+    ${CKAN_ACTION_URL}/organization_create
+)
+
+DR_ORG_ID=$(echo $DR_ORG | sed -r 's/^(.*)"id": "(.*)",(.*)/\2/')
+
+curl -L -s --header "Authorization: ${API_KEY}" \
+    --data "id=${DR_ORG_ID}&object=dr_admin&object_type=user&capacity=admin" \
+    ${CKAN_ACTION_URL}/member_create
+
+curl -L -s --header "Authorization: ${API_KEY}" \
+    --data "id=${DR_ORG_ID}&object=dr_editor&object_type=user&capacity=editor" \
+    ${CKAN_ACTION_URL}/member_create
+
+echo "Creating test Data Request:"
+
+curl -L -s --header "Authorization: ${API_KEY}" \
+    --data "title=Test Request&description=This is an example&organization_id=${DR_ORG_ID}" \
+    ${CKAN_ACTION_URL}/create_datarequest
+
+echo "Creating config value for resource formats:"
 
 curl -L -s --header "Authorization: ${API_KEY}" \
     --data "ckanext.data_qld.resource_formats=JSON" \
