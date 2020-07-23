@@ -61,13 +61,22 @@ paster create-test-data -c ${CKAN_INI_FILE}
 
 echo "Assigning test Datasets to Organisation..."
 
-curl -L -s -q --header "Authorization: ${API_KEY}" \
-    --data "id=annakarenina&owner_org=${TEST_ORG_ID}" \
-    ${CKAN_ACTION_URL}/package_patch >> /dev/null
+echo "Updating annakarenina to use ${TEST_ORG_TITLE} organisation:"
+package_owner_org_update=$( \
+    curl -L -s --header "Authorization: ${API_KEY}" \
+    --data "id=annakarenina&organization_id=${TEST_ORG_NAME}" \
+    ${CKAN_ACTION_URL}/package_owner_org_update
+)
+echo ${package_owner_org_update}
 
-curl -L -s -q --header "Authorization: ${API_KEY}" \
-    --data "id=warandpeace&owner_org=${TEST_ORG_ID}" \
-    ${CKAN_ACTION_URL}/package_patch >> /dev/null
+echo "Updating warandpeace to use ${TEST_ORG_TITLE} organisation:"
+package_owner_org_update=$( \
+    curl -L -s --header "Authorization: ${API_KEY}" \
+    --data "id=warandpeace&organization_id=${TEST_ORG_NAME}" \
+    ${CKAN_ACTION_URL}/package_owner_org_update
+)
+echo ${package_owner_org_update}
+
 
 # Data Requests requires a specific organisation to exist in order to create DRs for Data.Qld
 DR_ORG_NAME=open-data-administration-data-requests
@@ -100,7 +109,7 @@ curl -L -s --header "Authorization: ${API_KEY}" \
 echo "Creating test Data Request:"
 
 curl -L -s --header "Authorization: ${API_KEY}" \
-    --data "title=Test Request&description=This is an example&organization_id=${DR_ORG_ID}" \
+    --data "title=Test Request&description=This is an example&organization_id=${TEST_ORG_ID}" \
     ${CKAN_ACTION_URL}/create_datarequest
 
 echo "Creating config value for resource formats:"
